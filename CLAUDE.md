@@ -19,6 +19,8 @@ O "aplicativo" é uma página publicada como Claude Artifact, com banco de dados
 - **Código-fonte:** `app/financas.html` — sempre editar este arquivo e republicar (mesmo `file_path`) para atualizar o app, nunca criar um novo artifact para a mesma finalidade (perde a URL e o banco de dados associado).
 - **Capabilities declaradas:** `db` apenas. A capability `user` (que permitiria dados privados por visitante via `data/users/me/...`) não estava disponível para esta conta na sessão em que o app foi criado — como o uso é de uma pessoa só, os dados ficam em coleções compartilhadas no nível raiz do banco (não há necessidade prática de isolamento por usuário). Se `user` ficar disponível no futuro e for interessante usar (ex.: compartilhar o app com mais alguém sem misturar dados), reavaliar.
 - Artifact é privado por padrão (só quem tem o link/está logado como dono acessa) — não foi compartilhado publicamente.
+- **Abas:** Lançar (form + lançamentos recentes), Resumo (mês a mês, meses em grade jan-dez, gasto por categoria com cor própria por categoria — clicar numa categoria expande ali mesmo o detalhamento por subcategoria + lançamentos daquele mês/categoria) e Extrato (filtro livre por mês/categoria/subcategoria, pensado pra explorar sem estar preso ao mês do Resumo).
+- Carregamento de dados é por busca direta (`get()`), não por escuta ao vivo (`onSnapshot`) — havia um bug real de `onSnapshot` engolindo um erro de mutação em objeto congelado (`d.data()` é read-only; nunca fazer `v.id = d.id` direto nele, sempre `Object.assign({}, d.data(), {id: d.id})`). O app recarrega ao abrir, depois de salvar/excluir, e tem um botão ↻ manual na aba Resumo.
 
 ## 3. Modelo de dados (banco do Artifact)
 
@@ -45,7 +47,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio |
 | Assinaturas | Streaming, Jogos, Produtividade, Fidelidade |
 | Moradia | Água, Internet/TV, Energia, Condomínio, Aluguel |
-| Outros | Não identificado |
+| Outros | Não identificado, Documentos |
 
 Receita (um nível só, sem mudança): Salário, Freelance/Extra, Reembolso, Rendimento, Outros.
 
@@ -96,10 +98,18 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - **Irachai** — restaurante japonês → Alimentação > Restaurante/Delivery.
 - **IFD\*...** (prefixo) → iFood → Alimentação > Restaurante/Delivery.
 - **Assinaturas de IA no cartão da Melina** (Claude.ai, Anthropic, OpenAI/ChatGPT, Suno, Gamma.app) — uso profissional dela, **excluídas do controle**, nunca lançar.
+- **MP\*Kipaopremium ("Ki Pão")** → padaria → Alimentação > Padaria.
+- **LC Comercio** = Padaria Bonfim, onde João Paulo almoça com frequência → Alimentação > Restaurante/Delivery (apesar do nome "padaria", é usada como restaurante).
+- **Bee\*\*Pagtesouro** — provavelmente renovação de passaporte de João Paulo → Outros > Documentos.
+- **Conceito Tabacaria** → figurinhas do álbum da Copa do Pedro (mesmo padrão da Banca Souza e Silva) → Lazer > Colecionáveis.
+- **Srxis** — não lembra o que é, mas confirmou que é restaurante → Alimentação > Restaurante/Delivery.
+- **MP\*Melimais** (cartão da Melina, recorrente ~R$19,90/mês) — conta da Unifan → Educação > Curso/Plataforma.
+- **MP\*Produtoslucena** e **MP\*Seunaturalpra** (cartão da Melina) — produtos naturais (castanhas etc.) → Alimentação > Supermercado.
+- **MP\*Angelafantasi** (cartão da Melina) — feira de frutas → Alimentação > Supermercado.
 
-**Excluídos do controle (confirmados "não são gastos seus/da família" ou "desconsiderar")**: Anabeatrizde, Francisco / 66.061.005 Francisco, N Deluxo II, Resilienza Negocios LT, DRF Comercio Ltda, Freeway, Alpinas Comercio, Comercial LNR Ltda, Mineiros4u, ZIG\*ECN Bett Educar.
+**Excluídos do controle (confirmados "não são gastos seus/da família" ou "desconsiderar")**: Anabeatrizde, Francisco / 66.061.005 Francisco, N Deluxo II, Resilienza Negocios LT, DRF Comercio Ltda, Freeway, Alpinas Comercio, Comercial LNR Ltda, Mineiros4u, ZIG\*ECN Bett Educar, Virttus Consultoria (consultoria contratada e depois cancelada), Nayara Variedades (uso da escola, não é gasto do João Paulo).
 
-**Ainda não identificados** (foram lançados com categoria genérica "Outros > Não identificado" — perguntar se a pessoa quiser refinar depois): Arianecostada, Purefit Eventos, MP Kipaopremium, Bee Pagtesouro, LC Comercio, Veneza Empreendimentos, Nayara Variedades, Dlknet AC Capim Macio, Conceito Tabacaria, Srxis, Virttus Consultoria (parcelado 10x ~R$277/mês — valor relevante, vale confirmar), e vários "MP\*..." (Mercado Pago maquininha) de comerciante não identificável pelo nome.
+**Ainda não identificados** (ficam com categoria genérica "Outros > Não identificado" — a pessoa já foi perguntada e não reconheceu; não perguntar de novo, só categorizar se ela mencionar espontaneamente): Arianecostada, Purefit Eventos, Veneza Empreendimentos, Dlknet\*AC Capim Macio, MP\*Paulorobertob, MP\*Elenirfrare, MP\*6348672Alice.
 
 ## 4. Lançamento manual
 
