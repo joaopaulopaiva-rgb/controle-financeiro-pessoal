@@ -137,12 +137,18 @@
   .empty{ text-align:center; color:var(--text-muted); font-size:13.5px; padding:24px 10px; }
 
   /* --- Resumo --- */
-  .month-select{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+  .month-select{ display:flex; flex-wrap:wrap; gap:8px; }
   .month-chip{
     flex:0 0 auto; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
     padding:8px 14px; border-radius:999px; font:inherit; font-weight:600; font-size:13.5px; cursor:pointer; white-space:nowrap;
   }
   .month-chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+  .barrow-detalhe{ margin:2px 0 10px; padding:11px 12px; background:var(--surface-2); border-radius:10px; display:flex; flex-direction:column; gap:10px; }
+  .sublist{ display:flex; flex-direction:column; gap:6px; }
+  .subrow{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:1px 2px; }
+  .subrow .subnome{ font-weight:600; color:var(--text); }
+  .subrow .subval{ color:var(--text-muted); }
 
   .stat-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .stat{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 10px; text-align:center; box-shadow:var(--shadow); }
@@ -249,7 +255,7 @@
       </div>
 
       <div class="card">
-        <div class="list-title" style="margin-top:0;">Gasto por categoria</div>
+        <div class="list-title" style="margin-top:0; margin-bottom:10px;">Gasto por categoria</div>
         <div class="barlist" id="barlist"></div>
       </div>
 
@@ -361,7 +367,8 @@
     transacoes: [],
     resumos: [],
     mesAtual: isoMonth(new Date()),
-    filtro: { mes: "todos", categoria: "todas", subcategoria: "todas" }
+    filtro: { mes: "todos", categoria: "todas", subcategoria: "todas" },
+    resumoExpandido: null
   };
 
   var $ = function(sel, root){ return (root||document).querySelector(sel); };
@@ -617,10 +624,41 @@
       chip.textContent = monthLabelShort(m);
       chip.addEventListener('click', function(){
         state.mesAtual = m;
+        state.resumoExpandido = null;
         renderResumo();
       });
       wrap.appendChild(chip);
     });
+  }
+
+  // Painel que abre embaixo de uma categoria clicada no Resumo: gasto por subcategoria + os lançamentos.
+  function construirDetalheCategoria(cat, doMes){
+    var itens = doMes.filter(function(t){ return t.tipo !== 'receita' && t.categoria === cat; });
+    var porSub = {};
+    itens.forEach(function(t){
+      var s = t.subcategoria || "Sem subcategoria";
+      porSub[s] = (porSub[s]||0) + t.valor;
+    });
+    var subs = Object.keys(porSub).map(function(k){ return {sub:k, val:porSub[k]}; }).sort(function(a,b){ return b.val - a.val; });
+
+    var wrap = document.createElement('div');
+    wrap.className = "barrow-detalhe";
+
+    var subWrap = document.createElement('div');
+    subWrap.className = "sublist";
+    subs.forEach(function(s){
+      var r = document.createElement('div');
+      r.className = "subrow";
+      r.innerHTML = '<span class="subnome">' + escapeHtml(s.sub) + '</span><span class="subval num">' + fmtBRL(s.val) + '</span>';
+      subWrap.appendChild(r);
+    });
+    wrap.appendChild(subWrap);
+
+    var txnsWrap = document.createElement('div');
+    renderListaTxns(txnsWrap, itens, "Sem lançamentos.");
+    wrap.appendChild(txnsWrap);
+
+    return wrap;
   }
 
   function renderResumo(){
@@ -664,11 +702,14 @@
           '<div class="top"><span class="cat"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + cor + ';margin-right:6px;"></span>' + escapeHtml(b.cat) + '</span><span class="val num">' + fmtBRL(b.val) + '</span></div>' +
           '<div class="bartrack"><div class="barfill" style="width:' + pct + '%;background:' + cor + ';"></div></div>';
         row.addEventListener('click', function(){
-          state.filtro = { mes: state.mesAtual, categoria: b.cat, subcategoria: "todas" };
-          ativarTab('extrato');
-          renderExtrato();
+          state.resumoExpandido = (state.resumoExpandido === b.cat) ? null : b.cat;
+          renderResumo();
         });
         barlist.appendChild(row);
+
+        if(state.resumoExpandido === b.cat){
+          barlist.appendChild(construirDetalheCategoria(b.cat, doMes));
+        }
       });
     }
 
