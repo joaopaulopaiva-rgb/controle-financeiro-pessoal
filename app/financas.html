@@ -236,7 +236,10 @@
     </section>
 
     <section id="tab-resumo">
-      <div class="month-select" id="mesSelect"></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="month-select" id="mesSelect" style="flex:1;"></div>
+        <button type="button" id="btnAtualizar" title="Atualizar" style="flex:0 0 auto; border:1px solid var(--border); background:var(--surface); color:var(--text); width:34px; height:34px; border-radius:999px; font-size:15px; cursor:pointer;">↻</button>
+      </div>
 
       <div class="stat-row">
         <div class="stat receitas"><div class="k">Receitas</div><div class="v num" id="statReceitas">R$ 0</div></div>
@@ -447,6 +450,7 @@
       $('#valor').value = "";
       $('#descricao').value = "";
       $('#valor').focus();
+      return carregarDados();
     }).catch(function(err){
       alert("Não consegui salvar: " + (err && err.message ? err.message : "erro desconhecido"));
     }).then(function(){
@@ -497,7 +501,9 @@
       btn.addEventListener('click', function(){
         if(!state.db) return;
         if(!confirm("Excluir este lançamento?")) return;
-        state.db.collection("transacoes").doc(btn.dataset.id).delete().catch(function(){});
+        state.db.collection("transacoes").doc(btn.dataset.id).delete().then(function(){
+          return carregarDados();
+        }).catch(function(){});
       });
     });
   }
@@ -617,14 +623,27 @@
     }
     renderChips();
 
-    function mostrarErroSync(origem, err){
-      var banner = $('#syncBanner');
-      banner.textContent = "Não consegui atualizar (" + origem + "): " + (err && err.message ? err.message : "erro desconhecido") + " — tente recarregar a página.";
-      banner.style.display = "block";
-    }
+    $('#btnAtualizar').addEventListener('click', function(){
+      var btn = $('#btnAtualizar');
+      btn.disabled = true;
+      carregarDados().then(function(){ btn.disabled = false; });
+    });
 
-    db.collection("transacoes").orderBy("data", "desc").limit(1000).onSnapshot(function(snap){
-      $('#syncBanner').style.display = "none";
+    await carregarDados();
+  }
+
+  function mostrarErroSync(origem, err){
+    var banner = $('#syncBanner');
+    banner.textContent = "Não consegui atualizar (" + origem + "): " + (err && err.message ? err.message : "erro desconhecido") + " — toque em ↻ na aba Resumo para tentar de novo.";
+    banner.style.display = "block";
+  }
+
+  // Busca direta (sem escuta ao vivo) — mais simples e confiável para um app de uso pessoal:
+  // os dados só mudam quando alguém salva/exclui por aqui ou o Claude lança pelo chat,
+  // então recarregar nesses momentos (e com o botão ↻) é suficiente.
+  function carregarDados(){
+    if(!state.db) return Promise.resolve();
+    var pTx = state.db.collection("transacoes").limit(1000).get().then(function(snap){
       state.transacoes = snap.docs.map(function(d){
         var v = d.data();
         v.id = d.id;
@@ -633,14 +652,17 @@
         if(a.data !== b.data) return a.data < b.data ? 1 : -1;
         return (b.criado_em||"").localeCompare(a.criado_em||"");
       });
+    });
+    var pRes = state.db.collection("resumos").limit(24).get().then(function(snap){
+      state.resumos = snap.docs.map(function(d){ return {id: d.id, data: d.data()}; });
+    });
+    return Promise.all([pTx, pRes]).then(function(){
+      $('#syncBanner').style.display = "none";
       renderRecentes();
       renderResumo();
-    }, function(err){ mostrarErroSync("lançamentos", err); });
-
-    db.collection("resumos").orderBy("mes", "desc").limit(24).onSnapshot(function(snap){
-      state.resumos = snap.docs.map(function(d){ return {id: d.id, data: d.data()}; });
-      renderResumo();
-    }, function(err){ mostrarErroSync("análises mensais", err); });
+    }).catch(function(err){
+      mostrarErroSync("lançamentos/análises", err);
+    });
   }
 
   boot();
