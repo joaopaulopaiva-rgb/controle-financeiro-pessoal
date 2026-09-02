@@ -645,8 +645,7 @@
     if(!state.db) return Promise.resolve();
     var pTx = state.db.collection("transacoes").limit(1000).get().then(function(snap){
       state.transacoes = snap.docs.map(function(d){
-        var v = d.data();
-        v.id = d.id;
+        var v = Object.assign({}, d.data(), {id: d.id});
         return v;
       }).sort(function(a,b){
         if(a.data !== b.data) return a.data < b.data ? 1 : -1;
