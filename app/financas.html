@@ -178,6 +178,7 @@
     <nav class="tabs">
       <button data-tab="lancar" class="active">Lançar</button>
       <button data-tab="resumo">Resumo</button>
+      <button data-tab="extrato">Extrato</button>
     </nav>
   </header>
 
@@ -257,6 +258,30 @@
         <div id="analisesLista" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
     </section>
+
+    <section id="tab-extrato">
+      <div class="card" style="display:flex; flex-direction:column; gap:14px;">
+        <label class="field">Mês
+          <div class="chips" id="filtroMesChips"></div>
+        </label>
+        <label class="field">Categoria
+          <div class="chips" id="filtroCatChips"></div>
+        </label>
+        <label class="field" id="filtroSubField" style="display:none;">Subcategoria
+          <div class="chips" id="filtroSubChips"></div>
+        </label>
+      </div>
+
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="k" style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;">Total do filtro</div>
+          <div class="v num" id="extratoTotal" style="font-size:19px;font-weight:700;margin-top:2px;">R$ 0,00</div>
+        </div>
+        <div class="k" id="extratoCount" style="font-size:12px;color:var(--text-muted);">0 lançamentos</div>
+      </div>
+
+      <div id="extratoLista"></div>
+    </section>
   </main>
 </div>
 
@@ -289,7 +314,8 @@
     subcategoriaSelecionada: null,
     transacoes: [],
     resumos: [],
-    mesAtual: isoMonth(new Date())
+    mesAtual: isoMonth(new Date()),
+    filtro: { mes: "todos", categoria: "todas", subcategoria: "todas" }
   };
 
   var $ = function(sel, root){ return (root||document).querySelector(sel); };
@@ -306,13 +332,12 @@
   }
 
   // ---- Tabs ----
+  function ativarTab(nome){
+    $all('nav.tabs button').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === nome); });
+    $all('main > section').forEach(function(s){ s.classList.toggle('active', s.id === 'tab-' + nome); });
+  }
   $all('nav.tabs button').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      $all('nav.tabs button').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      $all('main > section').forEach(function(s){ s.classList.remove('active'); });
-      $('#tab-' + btn.dataset.tab).classList.add('active');
-    });
+    btn.addEventListener('click', function(){ ativarTab(btn.dataset.tab); });
   });
 
   // ---- Entry form: type toggle ----
@@ -458,17 +483,16 @@
     });
   });
 
-  // ---- Render recent list ----
-  function renderRecentes(){
-    var wrap = $('#listaRecentes');
+  // ---- Lista de lançamentos (agrupada por dia) — usada em Lançar e Extrato ----
+  function renderListaTxns(wrap, lista, msgVazio){
     wrap.innerHTML = "";
-    if(!state.transacoes.length){
-      wrap.innerHTML = '<div class="empty">Nenhum lançamento ainda. Registre o primeiro acima.</div>';
+    if(!lista.length){
+      wrap.innerHTML = '<div class="empty">' + escapeHtml(msgVazio) + '</div>';
       return;
     }
     var porDia = {};
     var ordem = [];
-    state.transacoes.slice(0, 60).forEach(function(t){
+    lista.forEach(function(t){
       if(!porDia[t.data]){ porDia[t.data] = []; ordem.push(t.data); }
       porDia[t.data].push(t);
     });
@@ -477,7 +501,7 @@
     ordem.forEach(function(dia){
       var group = document.createElement('div');
       var label = dia === hoje ? "Hoje" : dia === ontem ? "Ontem" :
-        new Date(dia + "T00:00:00").toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+        new Date(dia + "T00:00:00").toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
       group.innerHTML = '<div class="day-label">' + label + '</div>';
       var list = document.createElement('div');
       list.className = "day-group";
@@ -506,6 +530,10 @@
         }).catch(function(){});
       });
     });
+  }
+
+  function renderRecentes(){
+    renderListaTxns($('#listaRecentes'), state.transacoes.slice(0, 60), "Nenhum lançamento ainda. Registre o primeiro acima.");
   }
 
   function escapeHtml(s){
@@ -574,10 +602,16 @@
       bars.forEach(function(b){
         var row = document.createElement('div');
         row.className = "barrow";
+        row.style.cursor = "pointer";
         var pct = max ? Math.round((b.val/max)*100) : 0;
         row.innerHTML =
           '<div class="top"><span class="cat">' + escapeHtml(b.cat) + '</span><span class="val num">' + fmtBRL(b.val) + '</span></div>' +
           '<div class="bartrack"><div class="barfill" style="width:' + pct + '%"></div></div>';
+        row.addEventListener('click', function(){
+          state.filtro = { mes: state.mesAtual, categoria: b.cat, subcategoria: "todas" };
+          ativarTab('extrato');
+          renderExtrato();
+        });
         barlist.appendChild(row);
       });
     }
@@ -599,6 +633,91 @@
         (divergenciasHtml ? '<ul>' + divergenciasHtml + '</ul>' : '');
       analiseWrap.appendChild(div);
     }
+  }
+
+  // ---- Extrato tab (filtro por mês/categoria/subcategoria) ----
+  function categoriasTodas(){
+    var lista = Object.keys(state.categorias.despesa).slice();
+    state.categorias.receita.forEach(function(c){ if(lista.indexOf(c) === -1) lista.push(c); });
+    return lista;
+  }
+
+  function renderFiltroChips(){
+    var wrapMes = $('#filtroMesChips');
+    wrapMes.innerHTML = "";
+    var opMesTodos = document.createElement('button');
+    opMesTodos.type = "button";
+    opMesTodos.className = "chip" + (state.filtro.mes === "todos" ? " active" : "");
+    opMesTodos.textContent = "Todos";
+    opMesTodos.addEventListener('click', function(){ state.filtro.mes = "todos"; renderExtrato(); });
+    wrapMes.appendChild(opMesTodos);
+    mesesDisponiveis().forEach(function(m){
+      var chip = document.createElement('button');
+      chip.type = "button";
+      chip.className = "chip" + (state.filtro.mes === m ? " active" : "");
+      chip.textContent = monthLabelShort(m);
+      chip.addEventListener('click', function(){ state.filtro.mes = m; renderExtrato(); });
+      wrapMes.appendChild(chip);
+    });
+
+    var wrapCat = $('#filtroCatChips');
+    wrapCat.innerHTML = "";
+    var opCatTodas = document.createElement('button');
+    opCatTodas.type = "button";
+    opCatTodas.className = "chip" + (state.filtro.categoria === "todas" ? " active" : "");
+    opCatTodas.textContent = "Todas";
+    opCatTodas.addEventListener('click', function(){ state.filtro.categoria = "todas"; state.filtro.subcategoria = "todas"; renderExtrato(); });
+    wrapCat.appendChild(opCatTodas);
+    categoriasTodas().forEach(function(cat){
+      var chip = document.createElement('button');
+      chip.type = "button";
+      chip.className = "chip" + (state.filtro.categoria === cat ? " active" : "");
+      chip.textContent = cat;
+      chip.addEventListener('click', function(){ state.filtro.categoria = cat; state.filtro.subcategoria = "todas"; renderExtrato(); });
+      wrapCat.appendChild(chip);
+    });
+
+    var subField = $('#filtroSubField');
+    var subLista = state.categorias.despesa[state.filtro.categoria] || [];
+    if(state.filtro.categoria === "todas" || !subLista.length){
+      subField.style.display = "none";
+    } else {
+      subField.style.display = "flex";
+      var wrapSub = $('#filtroSubChips');
+      wrapSub.innerHTML = "";
+      var opSubTodas = document.createElement('button');
+      opSubTodas.type = "button";
+      opSubTodas.className = "chip" + (state.filtro.subcategoria === "todas" ? " active" : "");
+      opSubTodas.textContent = "Todas";
+      opSubTodas.addEventListener('click', function(){ state.filtro.subcategoria = "todas"; renderExtrato(); });
+      wrapSub.appendChild(opSubTodas);
+      subLista.forEach(function(sub){
+        var chip = document.createElement('button');
+        chip.type = "button";
+        chip.className = "chip" + (state.filtro.subcategoria === sub ? " active" : "");
+        chip.textContent = sub;
+        chip.addEventListener('click', function(){ state.filtro.subcategoria = sub; renderExtrato(); });
+        wrapSub.appendChild(chip);
+      });
+    }
+  }
+
+  function renderExtrato(){
+    renderFiltroChips();
+
+    var filtrados = state.transacoes.filter(function(t){
+      if(state.filtro.mes !== "todos" && t.data.slice(0,7) !== state.filtro.mes) return false;
+      if(state.filtro.categoria !== "todas" && t.categoria !== state.filtro.categoria) return false;
+      if(state.filtro.subcategoria !== "todas" && t.subcategoria !== state.filtro.subcategoria) return false;
+      return true;
+    });
+
+    var total = 0;
+    filtrados.forEach(function(t){ total += (t.tipo === 'receita' ? t.valor : -t.valor); });
+    $('#extratoTotal').textContent = fmtBRL(total);
+    $('#extratoCount').textContent = filtrados.length + (filtrados.length === 1 ? " lançamento" : " lançamentos");
+
+    renderListaTxns($('#extratoLista'), filtrados.slice(0, 300), "Nenhum lançamento encontrado com esse filtro.");
   }
 
   // ---- Boot ----
@@ -659,6 +778,7 @@
       $('#syncBanner').style.display = "none";
       renderRecentes();
       renderResumo();
+      renderExtrato();
     }).catch(function(err){
       mostrarErroSync("lançamentos/análises", err);
     });
