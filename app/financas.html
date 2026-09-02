@@ -183,6 +183,7 @@
     <div id="offlineBanner" class="offline-banner" style="display:none;">
       Não consegui conectar ao banco de dados do app agora — abra este link a partir da conversa no Claude para lançar e ver seus dados.
     </div>
+    <div id="syncBanner" class="offline-banner" style="display:none;"></div>
 
     <section id="tab-lancar" class="active">
       <form id="entry" class="card">
@@ -615,7 +616,14 @@
     }
     renderChips();
 
+    function mostrarErroSync(origem, err){
+      var banner = $('#syncBanner');
+      banner.textContent = "Não consegui atualizar (" + origem + "): " + (err && err.message ? err.message : "erro desconhecido") + " — tente recarregar a página.";
+      banner.style.display = "block";
+    }
+
     db.collection("transacoes").orderBy("data", "desc").limit(1000).onSnapshot(function(snap){
+      $('#syncBanner').style.display = "none";
       state.transacoes = snap.docs.map(function(d){
         var v = d.data();
         v.id = d.id;
@@ -626,12 +634,12 @@
       });
       renderRecentes();
       renderResumo();
-    }, function(){ /* silent: keep last known state */ });
+    }, function(err){ mostrarErroSync("lançamentos", err); });
 
     db.collection("resumos").orderBy("mes", "desc").limit(24).onSnapshot(function(snap){
       state.resumos = snap.docs.map(function(d){ return {id: d.id, data: d.data()}; });
       renderResumo();
-    }, function(){});
+    }, function(err){ mostrarErroSync("análises mensais", err); });
   }
 
   boot();
