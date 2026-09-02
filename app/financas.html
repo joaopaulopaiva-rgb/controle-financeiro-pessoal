@@ -137,10 +137,12 @@
   .empty{ text-align:center; color:var(--text-muted); font-size:13.5px; padding:24px 10px; }
 
   /* --- Resumo --- */
-  .month-nav{ display:flex; align-items:center; justify-content:space-between; }
-  .month-nav button{ border:0; background:var(--surface-2); width:32px; height:32px; border-radius:8px; font-size:16px; color:var(--text); cursor:pointer; }
-  .month-nav button:disabled{ opacity:.3; }
-  .month-nav .label{ font-weight:700; font-size:15px; }
+  .month-select{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+  .month-chip{
+    flex:0 0 auto; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    padding:8px 14px; border-radius:999px; font:inherit; font-weight:600; font-size:13.5px; cursor:pointer; white-space:nowrap;
+  }
+  .month-chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
 
   .stat-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .stat{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 10px; text-align:center; box-shadow:var(--shadow); }
@@ -234,11 +236,7 @@
     </section>
 
     <section id="tab-resumo">
-      <div class="month-nav">
-        <button id="mesPrev" type="button">‹</button>
-        <div class="label" id="mesLabel">—</div>
-        <button id="mesNext" type="button">›</button>
-      </div>
+      <div class="month-select" id="mesSelect"></div>
 
       <div class="stat-row">
         <div class="stat receitas"><div class="k">Receitas</div><div class="v num" id="statReceitas">R$ 0</div></div>
@@ -297,10 +295,10 @@
   function isoDate(d){ return d.toISOString().slice(0,10); }
   function isoMonth(d){ return d.toISOString().slice(0,7); }
   function fmtBRL(n){ return (n||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
-  function monthLabel(ym){
+  function monthLabelShort(ym){
     var parts = ym.split("-");
     var d = new Date(Number(parts[0]), Number(parts[1])-1, 1);
-    var s = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    var s = d.toLocaleDateString('pt-BR', {month:'short', year:'2-digit'}).replace('.', '');
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
@@ -518,23 +516,26 @@
     return Object.keys(set).sort();
   }
 
-  $('#mesPrev').addEventListener('click', function(){ moverMes(-1); });
-  $('#mesNext').addEventListener('click', function(){ moverMes(1); });
-  function moverMes(delta){
+  function renderMesChips(){
     var meses = mesesDisponiveis();
-    var idx = meses.indexOf(state.mesAtual);
-    var novo = idx + delta;
-    if(novo < 0 || novo >= meses.length) return;
-    state.mesAtual = meses[novo];
-    renderResumo();
+    if(meses.indexOf(state.mesAtual) === -1){ state.mesAtual = meses[meses.length - 1]; }
+    var wrap = $('#mesSelect');
+    wrap.innerHTML = "";
+    meses.forEach(function(m){
+      var chip = document.createElement('button');
+      chip.type = "button";
+      chip.className = "month-chip" + (m === state.mesAtual ? " active" : "");
+      chip.textContent = monthLabelShort(m);
+      chip.addEventListener('click', function(){
+        state.mesAtual = m;
+        renderResumo();
+      });
+      wrap.appendChild(chip);
+    });
   }
 
   function renderResumo(){
-    var meses = mesesDisponiveis();
-    var idx = meses.indexOf(state.mesAtual);
-    $('#mesLabel').textContent = monthLabel(state.mesAtual);
-    $('#mesPrev').disabled = idx <= 0;
-    $('#mesNext').disabled = idx === -1 || idx >= meses.length - 1;
+    renderMesChips();
 
     var doMes = state.transacoes.filter(function(t){ return t.data.slice(0,7) === state.mesAtual; });
     var receitas = 0, despesas = 0;
