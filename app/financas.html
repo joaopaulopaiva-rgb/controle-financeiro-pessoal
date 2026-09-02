@@ -200,6 +200,10 @@
           <div class="chips" id="catChips"></div>
         </label>
 
+        <label class="field" id="subField" style="display:none;">Subcategoria
+          <div class="chips" id="subChips"></div>
+        </label>
+
         <div class="grid2">
           <label class="field">Método
             <select id="metodo">
@@ -259,7 +263,18 @@
   "use strict";
 
   var DEFAULT_CATEGORIAS = {
-    despesa: ["Mercado","Restaurante/Delivery","Transporte","Moradia/Contas","Saúde","Educação","Lazer","Assinaturas","Compras","Cuidados pessoais","Pets","Outros"],
+    despesa: {
+      "Alimentação": ["Supermercado","Restaurante/Delivery","Padaria","Cafeteria","Doces/Salgados","Bebidas"],
+      "Transporte": ["Uber/Corridas","Combustível","Estacionamento","Carro/Manutenção"],
+      "Saúde": ["Plano odontológico","Academia","Farmácia","Médico/Especialista","Atividade física"],
+      "Educação": ["Inglês","Reforço escolar","Escola/Creche","Lanches","Material escolar","Curso/Plataforma"],
+      "Cuidados pessoais": ["Cabelo","Estética/Unha","Óptica","Perfumaria"],
+      "Compras": ["Roupas/Calçados","Móveis/Decoração","Joias","Eletrônicos","Marketplace/Geral","Loja de departamento","Casa/Eletro","Esporte","Diversos"],
+      "Lazer": ["Passeios/Parques","Eventos","Colecionáveis","Jogos","Passeio"],
+      "Assinaturas": ["Streaming","Jogos","Produtividade","Fidelidade"],
+      "Moradia": ["Água","Internet/TV","Energia","Condomínio","Aluguel"],
+      "Outros": ["Não identificado"]
+    },
     receita: ["Salário","Freelance/Extra","Reembolso","Rendimento","Outros"]
   };
   var METODO_LABEL = {pix:"Pix", credito:"Cartão de crédito", debito:"Cartão de débito", dinheiro:"Dinheiro", transferencia:"Transferência"};
@@ -269,6 +284,7 @@
     categorias: JSON.parse(JSON.stringify(DEFAULT_CATEGORIAS)),
     tipo: "despesa",
     categoriaSelecionada: null,
+    subcategoriaSelecionada: null,
     transacoes: [],
     resumos: [],
     mesAtual: isoMonth(new Date())
@@ -304,14 +320,19 @@
       btn.classList.add('active');
       state.tipo = btn.dataset.type;
       state.categoriaSelecionada = null;
+      state.subcategoriaSelecionada = null;
       renderChips();
     });
   });
 
+  function categoriasDoTipo(){
+    return state.tipo === 'despesa' ? Object.keys(state.categorias.despesa) : state.categorias.receita;
+  }
+
   function renderChips(){
     var wrap = $('#catChips');
     wrap.innerHTML = "";
-    var lista = state.categorias[state.tipo] || [];
+    var lista = categoriasDoTipo();
     lista.forEach(function(cat){
       var chip = document.createElement('button');
       chip.type = "button";
@@ -319,7 +340,9 @@
       chip.textContent = cat;
       chip.addEventListener('click', function(){
         state.categoriaSelecionada = cat;
+        state.subcategoriaSelecionada = null;
         renderChips();
+        renderSubChips();
       });
       wrap.appendChild(chip);
     });
@@ -331,12 +354,56 @@
       var nova = prompt("Nome da nova categoria de " + (state.tipo === 'despesa' ? 'despesa' : 'receita') + ":");
       nova = (nova||"").trim();
       if(!nova) return;
+      if(state.tipo === 'despesa'){
+        if(!state.categorias.despesa[nova]) state.categorias.despesa[nova] = [];
+      } else if(lista.indexOf(nova) === -1){
+        lista.push(nova);
+      }
+      salvarCategorias();
+      state.categoriaSelecionada = nova;
+      state.subcategoriaSelecionada = null;
+      renderChips();
+      renderSubChips();
+    });
+    wrap.appendChild(addChip);
+    renderSubChips();
+  }
+
+  function renderSubChips(){
+    var field = $('#subField');
+    var wrap = $('#subChips');
+    if(state.tipo !== 'despesa' || !state.categoriaSelecionada){
+      field.style.display = "none";
+      return;
+    }
+    field.style.display = "flex";
+    wrap.innerHTML = "";
+    var lista = state.categorias.despesa[state.categoriaSelecionada] || [];
+    lista.forEach(function(sub){
+      var chip = document.createElement('button');
+      chip.type = "button";
+      chip.className = "chip" + (state.subcategoriaSelecionada === sub ? " active" : "");
+      chip.textContent = sub;
+      chip.addEventListener('click', function(){
+        state.subcategoriaSelecionada = sub;
+        renderSubChips();
+      });
+      wrap.appendChild(chip);
+    });
+    var addChip = document.createElement('button');
+    addChip.type = "button";
+    addChip.className = "chip add";
+    addChip.textContent = "+ nova";
+    addChip.addEventListener('click', function(){
+      var nova = prompt("Nome da nova subcategoria de " + state.categoriaSelecionada + ":");
+      nova = (nova||"").trim();
+      if(!nova) return;
       if(lista.indexOf(nova) === -1){
         lista.push(nova);
         salvarCategorias();
       }
-      state.categoriaSelecionada = nova;
-      renderChips();
+      state.subcategoriaSelecionada = nova;
+      renderSubChips();
     });
     wrap.appendChild(addChip);
   }
@@ -359,12 +426,16 @@
     var valor = parseFloat($('#valor').value);
     if(!valor || valor <= 0){ $('#valor').focus(); return; }
     if(!state.categoriaSelecionada){
-      state.categoriaSelecionada = (state.categorias[state.tipo]||[])[0] || "Outros";
+      state.categoriaSelecionada = categoriasDoTipo()[0] || "Outros";
+    }
+    if(state.tipo === 'despesa' && !state.subcategoriaSelecionada){
+      state.subcategoriaSelecionada = (state.categorias.despesa[state.categoriaSelecionada]||[])[0] || "";
     }
     var doc = {
       tipo: state.tipo,
       valor: Math.round(valor * 100) / 100,
       categoria: state.categoriaSelecionada,
+      subcategoria: state.tipo === 'despesa' ? (state.subcategoriaSelecionada||"") : "",
       metodo: $('#metodo').value,
       data: $('#data').value || isoDate(new Date()),
       descricao: $('#descricao').value.trim(),
@@ -414,7 +485,7 @@
           '<span class="cat-dot ' + t.tipo + '"></span>' +
           '<div class="info">' +
             '<div class="desc">' + escapeHtml(t.descricao || t.categoria) + '</div>' +
-            '<div class="meta">' + escapeHtml(t.categoria) + ' · ' + (METODO_LABEL[t.metodo]||t.metodo) + '</div>' +
+            '<div class="meta">' + escapeHtml(t.categoria + (t.subcategoria ? ' · ' + t.subcategoria : '')) + ' · ' + (METODO_LABEL[t.metodo]||t.metodo) + '</div>' +
           '</div>' +
           '<div class="amt ' + t.tipo + ' num">' + (t.tipo === 'despesa' ? '-' : '+') + fmtBRL(t.valor) + '</div>' +
           '<button class="del" title="Excluir" data-id="' + t.id + '">×</button>';
@@ -537,14 +608,14 @@
     var cfgSnap = await db.doc("config/categorias").get().catch(function(){ return null; });
     if(cfgSnap && cfgSnap.exists){
       var data = cfgSnap.data();
-      state.categorias.despesa = data.despesa || DEFAULT_CATEGORIAS.despesa;
+      state.categorias.despesa = (data.despesa && typeof data.despesa === 'object' && !Array.isArray(data.despesa)) ? data.despesa : DEFAULT_CATEGORIAS.despesa;
       state.categorias.receita = data.receita || DEFAULT_CATEGORIAS.receita;
     } else {
       db.doc("config/categorias").set({despesa: DEFAULT_CATEGORIAS.despesa, receita: DEFAULT_CATEGORIAS.receita}).catch(function(){});
     }
     renderChips();
 
-    db.collection("transacoes").orderBy("data", "desc").limit(300).onSnapshot(function(snap){
+    db.collection("transacoes").orderBy("data", "desc").limit(1000).onSnapshot(function(snap){
       state.transacoes = snap.docs.map(function(d){
         var v = d.data();
         v.id = d.id;
