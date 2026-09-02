@@ -29,6 +29,7 @@ Coleções no banco do app (ver `db` capability — documentos JSON, até 5.000 
 - **`transacoes`** — uma doc por lançamento. Campos: `tipo` (`"despesa"` | `"receita"`), `valor` (number), `categoria` (string, macro), `subcategoria` (string, só para despesa — ver taxonomia na seção 3.1), `titular` (`"joao"` | `"melina"` | `"sophia"` — de qual cartão/pessoa veio o gasto; opcional, default implícito é João Paulo quando ausente), `metodo` (`"pix"` | `"credito"` | `"debito"` | `"dinheiro"` | `"transferencia"`), `data` (string `"YYYY-MM-DD"`), `descricao` (string, opcional), `origem` (`"manual"` | `"extrato"`), `criado_em` (ISO datetime).
 - **`resumos`** — uma doc por mês analisado, id = `"YYYY-MM"`. Escrita pelo Claude ao processar o extrato mensal (seção 5). Campos: `mes` (mesmo valor do id, para permitir `orderBy`), `receitas_total`, `despesas_total`, `saldo`, `por_categoria` (objeto categoria→valor), `destaques` (array de strings — achados relevantes), `divergencias` (array de strings — itens não identificados ou que precisam confirmação), `gerado_em` (ISO datetime).
 - **`config/categorias`** (documento único) — `{despesa: {categoria: [subcategorias...]}, receita: [...]}`. Despesa é **dois níveis** (categoria + subcategoria), receita continua só um nível. Editável pelo próprio app (chip "+ nova" grava aqui, tanto categoria quanto subcategoria). Ver taxonomia completa na seção 3.1.
+- **`unifan`** — coleção separada, **fora do controle financeiro ativo** (não entra em `transacoes`, não aparece no app, não conta em `resumos`/Extrato). Guarda gastos que a pessoa identifica como "da Unifan" (ver seção 3.3, regra fixa), preservados para uso futuro. Mesmo shape de documento que `transacoes`.
 
 Para inspecionar/editar o banco fora do app (ex.: escrever uma análise mensal), usar a ação `read_db`/`write_db` da ferramenta Artifact, com a URL do artifact acima.
 
@@ -38,7 +39,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 
 | Categoria | Subcategorias |
 |---|---|
-| Alimentação | Supermercado, Restaurante/Delivery, Padaria, Cafeteria, Doces/Salgados, Bebidas |
+| Alimentação | Supermercado, Restaurante/Delivery, Padaria, Cafeteria, Doces/Salgados, Bebidas, Mercadinho, Feira |
 | Transporte | Uber/Corridas, Combustível, Estacionamento, Carro/Manutenção |
 | Saúde | Plano odontológico, Academia, Farmácia, Médico/Especialista, Atividade física |
 | Educação | Inglês, Reforço escolar, Escola/Creche, Lanches, Material escolar, Curso/Plataforma |
@@ -70,6 +71,7 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - Nas faturas C6, uma compra **parcelada exibe sempre a data da compra original**, igual em todas as faturas subsequentes — **não é a data da cobrança real**. Para o campo `data` de um lançamento parcelado, usar uma data dentro do mês em que aquela fatura específica está cobrando (não o texto literal impresso na linha).
 - Item de pessoa física ou empresa não identificada → perguntar à pessoa antes de categorizar (mesmo que pareça óbvio) — ver seção 3.4 para o que já foi resolvido.
 - Alguns gastos que aparecem na fatura (mesmo em cartão da família) **não são da família** — a pessoa pode dizer explicitamente "excluir"/"retirar"/"são gastos de outra pessoa"; nesse caso o item não entra em `transacoes` de jeito nenhum.
+- **Regra fixa (combinada 02/set/2026): sempre que a pessoa disser que algo "é da Unifan"**, o lançamento não entra (ou sai, se já tiver entrado) de `transacoes`/`resumos`/Extrato — ele é guardado à parte na coleção `unifan` (seção 3, mesmo shape de documento), preservado para uso futuro, mas fora do controle financeiro ativo.
 
 ## 3.4 Comerciantes/pessoas já identificados (não perguntar de novo)
 
@@ -94,7 +96,6 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - **Ulisses Henrique Holan** — restaurante Poke → Alimentação > Restaurante/Delivery.
 - **Zig\*Teatro Riachuelo / Zig\*Olimpo / Dex** — bar de evento que João Paulo participou → Lazer > Eventos.
 - **Jetshr** — passeio de patinete → Lazer > Passeio.
-- **Olho D'Água** — mercadinho → Alimentação > Supermercado.
 - **Irachai** — restaurante japonês → Alimentação > Restaurante/Delivery.
 - **IFD\*...** (prefixo) → iFood → Alimentação > Restaurante/Delivery.
 - **Assinaturas de IA no cartão da Melina** (Claude.ai, Anthropic, OpenAI/ChatGPT, Suno, Gamma.app) — uso profissional dela, **excluídas do controle**, nunca lançar.
@@ -103,9 +104,10 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - **Bee\*\*Pagtesouro** — provavelmente renovação de passaporte de João Paulo → Outros > Documentos.
 - **Conceito Tabacaria** → figurinhas do álbum da Copa do Pedro (mesmo padrão da Banca Souza e Silva) → Lazer > Colecionáveis.
 - **Srxis** — não lembra o que é, mas confirmou que é restaurante → Alimentação > Restaurante/Delivery.
-- **MP\*Melimais** (cartão da Melina, recorrente ~R$19,90/mês) — conta da Unifan → Educação > Curso/Plataforma.
-- **MP\*Produtoslucena** e **MP\*Seunaturalpra** (cartão da Melina) — produtos naturais (castanhas etc.) → Alimentação > Supermercado.
-- **MP\*Angelafantasi** (cartão da Melina) — feira de frutas → Alimentação > Supermercado.
+- **MP\*Melimais** (cartão da Melina, recorrente ~R$19,90/mês) — conta da Unifan → **fora do controle** (regra fixa da seção 3.3), guardado na coleção `unifan`, não em `transacoes`.
+- **MP\*Produtoslucena** e **MP\*Seunaturalpra** (cartão da Melina) — produtos naturais (castanhas etc.) → Alimentação > **Mercadinho**.
+- **MP\*Angelafantasi** (cartão da Melina) — feira de frutas → Alimentação > **Feira** (nova subcategoria).
+- **Olho D'Água** e **Feira de Holambra** — ambos já vinham como "mercadinho"/"feira" no nome; reclassificados para Alimentação > **Mercadinho** e Alimentação > **Feira** respectivamente, por consistência com a subcategoria nova (ver seção 3.1).
 
 **Excluídos do controle (confirmados "não são gastos seus/da família" ou "desconsiderar")**: Anabeatrizde, Francisco / 66.061.005 Francisco, N Deluxo II, Resilienza Negocios LT, DRF Comercio Ltda, Freeway, Alpinas Comercio, Comercial LNR Ltda, Mineiros4u, ZIG\*ECN Bett Educar, Virttus Consultoria (consultoria contratada e depois cancelada), Nayara Variedades (uso da escola, não é gasto do João Paulo).
 
