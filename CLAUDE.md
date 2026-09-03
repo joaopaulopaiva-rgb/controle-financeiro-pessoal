@@ -127,7 +127,23 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 
 ## 4. Lançamento manual
 
-Feito diretamente no app (aba "Lançar"): valor, tipo, categoria (chips), método, data (default hoje), descrição opcional. Também pode ser feito **conversando com o Claude** ("gastei 50 no mercado no pix hoje") — nesse caso o Claude escreve direto na coleção `transacoes` via `write_db`, com `origem: "manual"` (é lançamento manual mesmo vindo por chat, não confundir com `origem: "extrato"`).
+Feito pelo modal "Novo lançamento" (botão no cabeçalho do app, desde o redesenho de 03/set/2026): valor, tipo, categoria→subcategoria (chips, com "+ nova" pra criar categoria/subcategoria na hora), método, data (default hoje), descrição opcional. Também pode ser feito **conversando com o Claude** ("gastei 50 no mercado no pix hoje") — nesse caso o Claude escreve direto na coleção `transacoes` via `write_db`, com `origem: "manual"` (é lançamento manual mesmo vindo por chat, não confundir com `origem: "extrato"`).
+
+### 4.1 Atalho por URL (pra ícone/atalho no celular)
+
+Implementado em 03/set/2026 pra permitir um atalho no celular (iOS Shortcuts, ou equivalente Android) abrir o app já com o lançamento pronto pra confirmar, sem precisar de nenhuma integração externa (WhatsApp foi cogitado e descartado por enquanto — exigiria WhatsApp Business API + servidor de webhook, infra real demais pro que se ganha; ver decisão na conversa de 03/set/2026 se precisar retomar o assunto).
+
+- **`#lancar`** (sem parâmetros) — abre o modal vazio direto ao carregar a página. Serve pra um ícone na tela de início que pula direto pro lançamento, sem passar pelo painel de indicadores.
+- **Parâmetros de query** (combináveis com `#lancar` ou sozinhos — qualquer um deles já dispara a abertura automática do modal):
+  - `valor` — aceita vírgula ou ponto decimal (`45,90` ou `45.90`).
+  - `desc` ou `descricao` — texto livre.
+  - `tipo` — `despesa` (default) ou `receita`.
+  - `categoria` / `subcategoria` — só pré-seleciona se o nome bater exatamente com uma categoria/subcategoria já cadastrada (senão fica sem categoria selecionada, pra pessoa escolher na hora).
+  - `metodo` — `pix` | `credito` | `debito` | `dinheiro` | `transferencia`.
+  - `data` — `YYYY-MM-DD` (default hoje).
+- Exemplo: `.../artifact/fb16885b.../?valor=45,90&desc=Padaria&tipo=despesa&categoria=Alimenta%C3%A7%C3%A3o&subcategoria=Padaria`.
+- A página **nunca salva sozinha** — só pré-preenche o formulário e abre o modal; a pessoa sempre confirma (ajusta categoria se precisar) e toca em "Salvar lançamento". Depois de aplicar os parâmetros, a URL é limpa (`history.replaceState`) pra um refresh manual não reabrir/repreencher com os mesmos dados.
+- A construção do atalho em si (app Atalhos do iOS perguntando valor/descrição por voz ou texto e montando o link) fica do lado da pessoa, no celular — não é algo que dá pra configurar por aqui.
 
 ## 5. Análise mensal de extratos
 

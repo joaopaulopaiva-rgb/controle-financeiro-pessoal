@@ -726,6 +726,53 @@
     });
   });
 
+  // ---- atalho por URL: abre o modal de lançamento já preenchido a partir de parâmetros ----
+  // Pensado pra um atalho do celular (iOS Shortcuts / Android) montar um link tipo
+  // financas.html?valor=45,90&desc=mercado&tipo=despesa e abrir direto pronto pra confirmar.
+  // #lancar sozinho (sem parâmetros) também abre o modal vazio — pra um ícone na tela de início
+  // que pula direto pro lançamento em vez do painel de indicadores.
+  function aplicarAtalhoURL(){
+    var params = new URLSearchParams(window.location.search);
+    var hash = window.location.hash.replace('#', '');
+    var camposDeAtalho = ['lancar','valor','desc','descricao','tipo','categoria','subcategoria','metodo','data'];
+    var deveAbrir = hash === 'lancar' || camposDeAtalho.some(function(k){ return params.has(k); });
+    if(!deveAbrir) return;
+
+    var tipoParam = params.get('tipo');
+    if(tipoParam === 'receita' || tipoParam === 'despesa'){
+      state.tipo = tipoParam;
+      $all('#segTipo button').forEach(function(b){ b.classList.toggle('active', b.dataset.tipo === tipoParam); });
+      $('#subWrap').style.display = tipoParam === 'receita' ? 'none' : 'block';
+    }
+
+    var catParam = params.get('categoria');
+    if(catParam && categoriasDoTipoModal().indexOf(catParam) > -1){
+      state.fCat = catParam;
+      var subParam = params.get('subcategoria');
+      if(state.tipo === 'despesa'){
+        var subs = state.categorias.despesa[catParam] || [];
+        state.fSub = (subParam && subs.indexOf(subParam) > -1) ? subParam : null;
+      }
+    }
+    renderFCategorias(); renderFSubcategorias();
+
+    var valorParam = params.get('valor');
+    if(valorParam){
+      var v = parseFloat(String(valorParam).replace(',', '.'));
+      if(!isNaN(v) && v > 0) $('#fValor').value = v;
+    }
+    var descParam = params.get('desc') || params.get('descricao');
+    if(descParam) $('#fDescricao').value = descParam;
+    var metodoParam = params.get('metodo');
+    if(metodoParam && METODO_LABEL[metodoParam]) $('#fMetodo').value = metodoParam;
+    $('#fData').value = params.get('data') || isoDate(new Date());
+
+    $('#modalOverlay').classList.add('open');
+    // Limpa a URL depois de aplicar, pra um refresh manual não reabrir/repreencher com os mesmos dados.
+    history.replaceState(null, '', window.location.pathname);
+    if(!valorParam){ $('#fValor').focus(); }
+  }
+
   // ---- header: saldo do mês corrente real ----
   function renderSaldoTag(){
     var mesReal = isoMonth(new Date());
@@ -750,6 +797,7 @@
       $('#offlineBanner').style.display = 'block';
       $('#btnLancar').disabled = true;
       renderFCategorias();
+      aplicarAtalhoURL();
       return;
     }
     state.db = db;
@@ -763,6 +811,7 @@
       db.doc('config/categorias').set({despesa: DEFAULT_CATEGORIAS.despesa, receita: DEFAULT_CATEGORIAS.receita}).catch(function(){});
     }
     renderFCategorias();
+    aplicarAtalhoURL();
 
     await carregarDados();
   }
