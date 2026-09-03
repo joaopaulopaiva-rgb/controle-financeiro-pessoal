@@ -61,7 +61,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Moradia | Água, Internet/TV, Energia, Aluguel, Jardinagem, Diaristas, Manutenção, Serviços de reparo |
 | Outros | Não identificado, Documentos |
 
-Receita (um nível só): Salário. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão.)
+Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão. "Escola de Pedro" é receita mesmo, confirmado — não é a mensalidade dele, que é despesa em Educação > Escola/Creche.)
 
 **Revisão de 03/set/2026** (decisões coletadas via ferramenta própria de revisão, ver conversa) — mudanças em relação à taxonomia original:
 - **Alimentação**: "Restaurante/Delivery" foi separado em "Restaurante" e "Delivery"; "Almoço no trabalho" é novo (specific pra almoços em dia de trabalho, ex. Apurn). Os 81 lançamentos que usavam a subcategoria antiga foram reclassificados retroativamente: os 5 da Apurn → Almoço no trabalho; os 4 com "iFood" no nome do comerciante → Delivery; os 63 restantes (nomes de restaurante "normais", sem indicação de app de entrega) → Restaurante. Critério: comerciante de app de delivery aparece com o nome do app na fatura (iFood, Rappi etc.); nome de restaurante "puro" sem esse padrão foi tratado como consumo no local.
