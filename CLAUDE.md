@@ -50,18 +50,29 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 
 | Categoria | Subcategorias |
 |---|---|
-| Alimentação | Supermercado, Restaurante/Delivery, Padaria, Cafeteria, Doces/Salgados, Bebidas, Mercadinho, Feira |
-| Transporte | Uber/Corridas, Combustível, Estacionamento, Carro/Manutenção |
-| Saúde | Plano odontológico, Academia, Farmácia, Médico/Especialista, Atividade física |
+| Alimentação | Supermercado, Padaria, Cafeteria, Doces/Salgados, Bebidas, Mercadinho, Feira, Restaurante, Delivery, Almoço no trabalho |
+| Transporte | Uber/Corridas, Combustível, Estacionamento, Manutenção, Limpeza |
+| Saúde | Plano odontológico, Academia, Farmácia, Médico/Especialista, Atividade física, Pelada de JP, Plano de Saúde |
 | Educação | Inglês, Reforço escolar, Escola/Creche, Lanches, Material escolar, Curso/Plataforma |
-| Cuidados pessoais | Cabelo, Estética/Unha, Óptica, Perfumaria |
+| Cuidados pessoais | Cabelo, Estética/Unha, Óptica, Perfumaria, Fisioterapeuta |
 | Compras | Roupas/Calçados, Móveis/Decoração, Joias, Eletrônicos, Marketplace/Geral, Loja de departamento, Casa/Eletro, Esporte, Diversos |
-| Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio |
+| Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio, Viagens |
 | Assinaturas | Streaming, Jogos, Produtividade, Fidelidade |
-| Moradia | Água, Internet/TV, Energia, Condomínio, Aluguel, Jardinagem |
+| Moradia | Água, Internet/TV, Energia, Aluguel, Jardinagem, Diaristas, Manutenção, Serviços de reparo |
 | Outros | Não identificado, Documentos |
 
-Receita (um nível só, sem mudança): Salário, Freelance/Extra, Reembolso, Rendimento, Outros.
+Receita (um nível só): Salário. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão.)
+
+**Revisão de 03/set/2026** (decisões coletadas via ferramenta própria de revisão, ver conversa) — mudanças em relação à taxonomia original:
+- **Alimentação**: "Restaurante/Delivery" foi separado em "Restaurante" e "Delivery"; "Almoço no trabalho" é novo (specific pra almoços em dia de trabalho, ex. Apurn). Os 81 lançamentos que usavam a subcategoria antiga foram reclassificados retroativamente: os 5 da Apurn → Almoço no trabalho; os 4 com "iFood" no nome do comerciante → Delivery; os 63 restantes (nomes de restaurante "normais", sem indicação de app de entrega) → Restaurante. Critério: comerciante de app de delivery aparece com o nome do app na fatura (iFood, Rappi etc.); nome de restaurante "puro" sem esse padrão foi tratado como consumo no local.
+- **Transporte**: "Carro/Manutenção" virou só "Manutenção"; "Limpeza" é nova. Os 9 lançamentos antigos: os 2 "LM Lava Jato" → Limpeza; os outros 7 (Sport Ka película, Urentcar, Jucelinho Pneus) → Manutenção (troca direta de nome, mesmo significado).
+- **Saúde**: novas "Pelada de JP" (futebol informal do João Paulo) e "Plano de Saúde" (diferente de "Plano odontológico").
+- **Cuidados pessoais**: nova "Fisioterapeuta".
+- **Lazer**: nova "Viagens".
+- **Moradia**: "Condomínio" removida (nenhum lançamento existente usava); novas "Diaristas", "Manutenção" (troca de serviço, não confundir com a de Transporte — mesmo nome, categorias diferentes), "Serviços de reparo".
+- **Receita**: reduzida a só "Salário" (ver acima).
+
+Se algum dos itens acima (principalmente a reclassificação em massa de Restaurante vs. Delivery, que foi inferida por mim a partir do nome do comerciante, não confirmada um por um) estiver errado, é só pedir pra eu corrigir — a lista completa do que foi movido está registrada na conversa de 03/set/2026.
 
 ## 3.2 Quem é quem (família)
 
