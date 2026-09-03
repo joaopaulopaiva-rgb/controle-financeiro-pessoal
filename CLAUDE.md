@@ -60,6 +60,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Assinaturas | Streaming, Jogos, Produtividade, Fidelidade |
 | Moradia | Água, Internet/TV, Energia, Aluguel, Jardinagem, Diaristas, Manutenção, Serviços de reparo |
 | Outros | Não identificado, Documentos |
+| Doações e Presentes | Doações, Presentes |
 
 Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão. "Escola de Pedro" é receita mesmo, confirmado — não é a mensalidade dele, que é despesa em Educação > Escola/Creche.)
 
@@ -71,6 +72,10 @@ Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso,
 - **Lazer**: nova "Viagens".
 - **Moradia**: "Condomínio" removida (nenhum lançamento existente usava); novas "Diaristas", "Manutenção" (troca de serviço, não confundir com a de Transporte — mesmo nome, categorias diferentes), "Serviços de reparo".
 - **Receita**: reduzida a só "Salário" (ver acima).
+
+**Ajuste de 03/set/2026 (segunda rodada, mesmo dia)**:
+- **Regra fixa: Kalaz, Apurn e Dunas (quando for "Dunas Restaurante") são sempre Alimentação > Almoço no trabalho**, não Restaurante — não perguntar de novo, já aplicar direto em importações futuras. Corrigidos retroativamente os 4 lançamentos de "Dunas Restaurante" e 1 de "Kalaz Restaurante" que tinham ficado em Restaurante na rodada anterior. **Atenção:** "Dunas Doceria" é comerciante diferente (doceria, não restaurante de almoço) — continua em Alimentação > Doces/Salgados, não entra nessa regra.
+- Nova categoria **Doações e Presentes**, com subcategorias Doações e Presentes.
 
 Se algum dos itens acima (principalmente a reclassificação em massa de Restaurante vs. Delivery, que foi inferida por mim a partir do nome do comerciante, não confirmada um por um) estiver errado, é só pedir pra eu corrigir — a lista completa do que foi movido está registrada na conversa de 03/set/2026.
 
