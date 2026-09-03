@@ -327,6 +327,7 @@
   function mesesDisponiveis(){
     var anos = {};
     state.transacoes.forEach(function(t){ anos[t.data.slice(0,4)] = true; });
+    state.resumos.forEach(function(r){ anos[r.id.slice(0,4)] = true; });
     anos[isoMonth(new Date()).slice(0,4)] = true;
     var meses = [];
     Object.keys(anos).sort().forEach(function(ano){
@@ -346,6 +347,18 @@
     return Object.keys(s).sort();
   }
   function mesesDoAnoComDados(ano){ return mesesComDados().filter(function(m){ return m.slice(0,4) === ano; }); }
+  // Meses que só têm um resumo mensal (importado sem detalhe de lançamento) — ver seção 5.1 do CLAUDE.md.
+  function mesesComResumo(){ return state.resumos.map(function(r){ return r.id; }).sort(); }
+  // União de meses com lançamento real + meses só com resumo — usada nos gráficos de evolução e no ranking
+  // de "meses com maiores despesas", que toleram um total sem detalhe. Widgets que precisam de subcategoria
+  // (Top 5, treemap, gauge, Extrato) continuam só em cima de `transacoes` — meses só-com-resumo aparecem
+  // vazios ali, de propósito (não têm o detalhe pra mostrar).
+  function mesesHistorico(){
+    var s = {};
+    mesesComDados().forEach(function(m){ s[m] = true; });
+    mesesComResumo().forEach(function(m){ s[m] = true; });
+    return Object.keys(s).sort();
+  }
   function categoriasTodas(){
     var lista = Object.keys(state.categorias.despesa).slice();
     state.categorias.receita.forEach(function(c){ if(lista.indexOf(c) === -1) lista.push(c); });
@@ -397,6 +410,13 @@
     var porMes = {};
     state.transacoes.filter(function(t){ return t.tipo === 'despesa'; }).forEach(function(t){
       var m = t.data.slice(0,7); porMes[m] = porMes[m] || {}; porMes[m][t.categoria] = (porMes[m][t.categoria]||0) + t.valor;
+    });
+    // Mês com resumo importado (ver seção 5.1 do CLAUDE.md) usa o total do resumo, mesmo que também tenha
+    // algum lançamento real solto (ex.: abril, que tem só 2 dias reais dentro de um mês resumido por
+    // inteiro — o resumo já é a fonte mais completa pra esse mês, não soma os dois).
+    state.resumos.forEach(function(r){
+      var pc = (r.data && r.data.por_categoria) || {};
+      if(Object.keys(pc).length){ porMes[r.id] = pc; }
     });
     var totais = Object.keys(porMes).map(function(m){ var tot = Object.values(porMes[m]).reduce(function(a,b){return a+b;},0); return {m:m, tot:tot}; })
       .sort(function(a,b){ return b.tot - a.tot; }).slice(0,5);
@@ -482,13 +502,23 @@
     svgEl.innerHTML = svg;
   }
   function renderEvolucoes(){
-    var meses = mesesComDados();
+    var meses = mesesHistorico();
+    var resumoPorId = {}; state.resumos.forEach(function(r){ resumoPorId[r.id] = r.data || {}; });
     var porMesDespesa = {}, porMesSaldo = {}, porMesReceitaSal = {}, porMesReceitaExtra = {};
     meses.forEach(function(m){ porMesDespesa[m]=0; porMesSaldo[m]=0; porMesReceitaSal[m]=0; porMesReceitaExtra[m]=0; });
     state.transacoes.forEach(function(t){
       var m = t.data.slice(0,7); if(!(m in porMesDespesa)) return;
       if(t.tipo==='despesa'){ porMesDespesa[m]+=t.valor; porMesSaldo[m]-=t.valor; }
       else { porMesSaldo[m]+=t.valor; if(t.categoria==='Salário') porMesReceitaSal[m]+=t.valor; else porMesReceitaExtra[m]+=t.valor; }
+    });
+    // Mês com resumo importado usa o total do resumo, mesmo tendo algum lançamento real solto (ex.: abril
+    // — ver comentário equivalente em renderMesesMaiores). Sem quebra salário/extra — vai tudo num
+    // segmento só. Ver seção 5.1 do CLAUDE.md.
+    meses.forEach(function(m){
+      if(!resumoPorId[m]) return;
+      var d = resumoPorId[m];
+      var desp = d.despesas_total || 0, rec = d.receitas_total || 0;
+      porMesDespesa[m] = desp; porMesReceitaSal[m] = rec; porMesSaldo[m] = rec - desp;
     });
     svgAxisChart($('#svgEvoDespesas'), meses.map(function(m){return {m:m,v:porMesDespesa[m]};}), {type:'bar', color:'var(--gold)'});
     svgAxisChart($('#svgEvoSaldo'), meses.map(function(m){return {m:m,v:porMesSaldo[m]};}), {type:'line', color:'var(--navy)', negativeOk:true});

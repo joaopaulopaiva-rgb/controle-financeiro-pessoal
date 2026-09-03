@@ -54,13 +54,14 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Transporte | Uber/Corridas, Combustível, Estacionamento, Manutenção, Limpeza |
 | Saúde | Plano odontológico, Academia, Farmácia, Médico/Especialista, Atividade física, Pelada de JP, Plano de Saúde |
 | Educação | Inglês, Reforço escolar, Escola/Creche, Lanches, Material escolar, Curso/Plataforma |
-| Cuidados pessoais | Cabelo, Estética/Unha, Óptica, Perfumaria, Fisioterapeuta |
+| Cuidados pessoais | Cabelo, Estética/Unha, Óptica, Perfumaria, Fisioterapeuta, Loterias |
 | Compras | Roupas/Calçados, Móveis/Decoração, Joias, Eletrônicos, Marketplace/Geral, Loja de departamento, Casa/Eletro, Esporte, Diversos |
-| Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio, Viagens |
+| Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio |
 | Assinaturas | Streaming, Jogos, Produtividade, Fidelidade |
 | Moradia | Água, Internet/TV, Energia, Aluguel, Jardinagem, Diaristas, Manutenção, Serviços de reparo |
 | Outros | Não identificado, Documentos |
 | Doações e Presentes | Doações, Presentes |
+| Viagens | *(vazio por ora — a pessoa vai mandar as subcategorias)* |
 
 Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão. "Escola de Pedro" é receita mesmo, confirmado — não é a mensalidade dele, que é despesa em Educação > Escola/Creche.)
 
@@ -76,6 +77,10 @@ Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso,
 **Ajuste de 03/set/2026 (segunda rodada, mesmo dia)**:
 - **Regra fixa: Kalaz, Apurn e Dunas (quando for "Dunas Restaurante") são sempre Alimentação > Almoço no trabalho**, não Restaurante — não perguntar de novo, já aplicar direto em importações futuras. Corrigidos retroativamente os 4 lançamentos de "Dunas Restaurante" e 1 de "Kalaz Restaurante" que tinham ficado em Restaurante na rodada anterior. **Atenção:** "Dunas Doceria" é comerciante diferente (doceria, não restaurante de almoço) — continua em Alimentação > Doces/Salgados, não entra nessa regra.
 - Nova categoria **Doações e Presentes**, com subcategorias Doações e Presentes.
+
+**Ajuste de 03/set/2026 (terceira rodada, mesmo dia)** — motivado pela importação do histórico do app antigo (ver seção 5.1):
+- **"Viagens" virou categoria própria** (antes era subcategoria de Lazer) — removida de Lazer, criada como categoria nova, ainda **sem subcategorias** (a pessoa vai mandar a lista depois).
+- Nova subcategoria **Loterias** em Cuidados pessoais (mapeamento da categoria "Serviços" do app antigo, que era gasto com loteria).
 
 Se algum dos itens acima (principalmente a reclassificação em massa de Restaurante vs. Delivery, que foi inferida por mim a partir do nome do comerciante, não confirmada um por um) estiver errado, é só pedir pra eu corrigir — a lista completa do que foi movido está registrada na conversa de 03/set/2026.
 
@@ -174,6 +179,36 @@ Fluxo quando a pessoa envia o extrato de cartão/Pix (PDF, CSV ou colado em text
 **Não versionar os arquivos de extrato brutos no repositório git** (PDFs/CSVs de banco têm dados sensíveis — número de conta, etc.) — processar na conversa e descartar; o que fica persistido é só o resultado estruturado no banco do Artifact (que não é um repositório git público).
 
 **Primeira importação (feita em 02/set/2026):** faturas C6 de maio, junho e julho/2026 (cartão principal + virtual de João Paulo, cartão da Sophia, cartão da Melina), 690 lançamentos no total. Nessa primeira rodada, o processo foi bem mais devagar que o fluxo normal descrito acima — a pessoa pediu para eu perguntar o perfil de cada comerciante não óbvio antes de categorizar (ver seção 3.4 para o que já ficou resolvido). Da próxima vez, comerciantes já mapeados na seção 3.4 não precisam de nova pergunta; só perguntar sobre nomes realmente novos.
+
+### 5.1 Histórico importado de app antigo (sem detalhe de lançamento)
+
+A pessoa usava outro app de controle financeiro antes do Extrato Vivo e tem lá um histórico de Jan-Mai/2026. Decisão (03/set/2026): importar esse histórico como **resumo mensal só com total por categoria** (print da tela "Gastos" do app antigo, com % e valor por categoria) — não como `transacoes` individuais, porque não tem lançamento por lançamento, data exata, comerciante nem subcategoria. Cada mês vira um doc em `resumos/{YYYY-MM}` com `por_categoria` preenchido a partir do print e **sem** o array `destaques` normal de análise de extrato — em vez disso uma nota explicando que é histórico importado sem detalhe.
+
+**Mapeamento de categoria (app antigo → Extrato Vivo)** — o app antigo tem uma taxonomia diferente, um nível só, sem subcategoria:
+
+| App antigo | Extrato Vivo | Confiança |
+|---|---|---|
+| Casa | Moradia | Alta |
+| Saúde | Saúde | Exata |
+| Transporte | Transporte | Exata |
+| Alimentação | Alimentação | Exata |
+| Lazer | Lazer | Exata |
+| Educação | Educação | Exata |
+| Assinaturas | Assinaturas | Exata |
+| Outros | Outros | Exata |
+| Viagem | Viagens (categoria própria, criada em 03/set/2026 — a pessoa vai mandar as subcategorias dela depois) | Alta |
+| Pessoal | Cuidados pessoais | Confirmado pela pessoa |
+| Serviços | Cuidados pessoais > Loterias (era gasto com loteria) | Confirmado pela pessoa |
+| Vestuário | Compras | Inferido (roupa/calçado — não confirmado explicitamente) |
+| Lanche | Educação (mesmo raciocínio da subcategoria Lanches já existente — uso escolar) | Inferido (não confirmado explicitamente) |
+
+O app antigo só mostra a aba "Gastos" nos prints recebidos até agora — **sem dado de receita** (`receitas_total` fica 0 nesses meses até a pessoa complementar, se quiser).
+
+**Meses processados assim:** 2026-01, 2026-02, 2026-03, 2026-04 (todos com `resumos/{mes}` gravado em 03/set/2026, valores batendo exatamente com o total do print). **2026-05 foi propositalmente pulado** — a pessoa avisou que maio já tinha bastante coisa levantada em detalhe (cartão já importado na primeira leva, seção acima) e vai complementar só com os valores de Pix de maio, sem precisar do resumo agregado.
+
+**Abril é caso especial:** já existiam 12 lançamentos reais de 29-30/abr (R$ 379,76) antes dessa importação — sobra da fatura de maio que cobre compras de abril. Isso NÃO foi removido nem duplicado: os 12 lançamentos continuam em `transacoes` normalmente (aparecem no Extrato/Top5/treemap se filtrar abril), mas os widgets de histórico (evolução, "meses com maiores despesas") usam o total do `resumos/2026-04` como fonte pra abril inteiro, não a soma dos dois — ver comentário no código (`renderMesesMaiores`/`renderEvolucoes` em `app/financas.html`). Regra geral daqui pra frente: **quando existir `resumos/{mes}`, ele é a fonte pros gráficos de histórico daquele mês**, mesmo que também existam alguns `transacoes` soltos no mesmo mês.
+
+Os widgets que dependem de lançamento individual (Top 5, treemap categoria×subcategoria, medidor de poupança, Extrato) continuam vazios pra qualquer mês que só tenha resumo — isso é esperado, não é bug.
 
 ## 6. Decisões e convenções
 
