@@ -47,7 +47,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Compras | Roupas/Calçados, Móveis/Decoração, Joias, Eletrônicos, Marketplace/Geral, Loja de departamento, Casa/Eletro, Esporte, Diversos |
 | Lazer | Passeios/Parques, Eventos, Colecionáveis, Jogos, Passeio |
 | Assinaturas | Streaming, Jogos, Produtividade, Fidelidade |
-| Moradia | Água, Internet/TV, Energia, Condomínio, Aluguel |
+| Moradia | Água, Internet/TV, Energia, Condomínio, Aluguel, Jardinagem |
 | Outros | Não identificado, Documentos |
 
 Receita (um nível só, sem mudança): Salário, Freelance/Extra, Reembolso, Rendimento, Outros.
@@ -107,7 +107,8 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - **MP\*Melimais** (cartão da Melina, recorrente ~R$19,90/mês) — conta da Unifan → **fora do controle** (regra fixa da seção 3.3), guardado na coleção `unifan`, não em `transacoes`.
 - **MP\*Produtoslucena** e **MP\*Seunaturalpra** (cartão da Melina) — produtos naturais (castanhas etc.) → Alimentação > **Mercadinho**.
 - **MP\*Angelafantasi** (cartão da Melina) — feira de frutas → Alimentação > **Feira** (nova subcategoria).
-- **Olho D'Água** e **Feira de Holambra** — ambos já vinham como "mercadinho"/"feira" no nome; reclassificados para Alimentação > **Mercadinho** e Alimentação > **Feira** respectivamente, por consistência com a subcategoria nova (ver seção 3.1).
+- **Olho D'Água** — já vinha como "mercadinho" no nome → Alimentação > **Mercadinho**.
+- **Feira de Holambra** — não é feira de alimento, é jardinagem → Moradia > **Jardinagem** (nova subcategoria).
 
 **Excluídos do controle (confirmados "não são gastos seus/da família" ou "desconsiderar")**: Anabeatrizde, Francisco / 66.061.005 Francisco, N Deluxo II, Resilienza Negocios LT, DRF Comercio Ltda, Freeway, Alpinas Comercio, Comercial LNR Ltda, Mineiros4u, ZIG\*ECN Bett Educar, Virttus Consultoria (consultoria contratada e depois cancelada), Nayara Variedades (uso da escola, não é gasto do João Paulo).
 
