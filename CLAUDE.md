@@ -61,7 +61,7 @@ Decisão da pessoa dona do projeto: toda categoria de despesa tem subcategorias 
 | Moradia | Água, Internet/TV, Energia, Aluguel, Jardinagem, Diaristas, Manutenção, Serviços de reparo |
 | Outros | Não identificado, Documentos |
 | Doações e Presentes | Doações, Presentes |
-| Viagens | *(vazio por ora — a pessoa vai mandar as subcategorias)* |
+| Viagens | Hospedagem, Passagens, Passeios, Alimentação em viagem, Pontos e Milhas |
 
 Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso, Rendimento e Outros foram removidos em 03/set/2026 — decisão da pessoa dona do projeto; nenhum lançamento existente usava essas categorias, então a remoção não deixou nada órfão. "Escola de Pedro" é receita mesmo, confirmado — não é a mensalidade dele, que é despesa em Educação > Escola/Creche.)
 
@@ -79,8 +79,13 @@ Receita (um nível só): Salário, Escola de Pedro. (Freelance/Extra, Reembolso,
 - Nova categoria **Doações e Presentes**, com subcategorias Doações e Presentes.
 
 **Ajuste de 03/set/2026 (terceira rodada, mesmo dia)** — motivado pela importação do histórico do app antigo (ver seção 5.1):
-- **"Viagens" virou categoria própria** (antes era subcategoria de Lazer) — removida de Lazer, criada como categoria nova, ainda **sem subcategorias** (a pessoa vai mandar a lista depois).
+- **"Viagens" virou categoria própria** (antes era subcategoria de Lazer) — removida de Lazer, criada como categoria nova.
 - Nova subcategoria **Loterias** em Cuidados pessoais (mapeamento da categoria "Serviços" do app antigo, que era gasto com loteria).
+
+**Ajuste de 03/set/2026 (quarta rodada, mesmo dia)** — a pessoa mandou print da tela de subcategorias de "Viagem" de outro app que já usava, pra basear a lista de Viagens aqui:
+- Subcategorias definidas: **Hospedagem, Passagens, Passeios, Alimentação em viagem, Pontos e Milhas**.
+- Do print original também apareciam "Viagem" (nome do grupo, redundante com a categoria) e "Beach Park" (nome de um destino específico, não um tipo de gasto) — **deixados de fora** por serem inferência minha, não confirmados; se "Beach Park" fizer falta como subcategoria de verdade (não só um lugar específico já visitado), é só pedir pra eu adicionar.
+- Cores adicionadas em `CATEGORY_COLORS`: Viagens `#0f9db0`/`#3dc4d8` (claro/escuro), Doações e Presentes `#a8548a`/`#cf7bad` (essa categoria também estava sem cor própria desde que foi criada).
 
 Se algum dos itens acima (principalmente a reclassificação em massa de Restaurante vs. Delivery, que foi inferida por mim a partir do nome do comerciante, não confirmada um por um) estiver errado, é só pedir pra eu corrigir — a lista completa do que foi movido está registrada na conversa de 03/set/2026.
 
@@ -196,7 +201,7 @@ A pessoa usava outro app de controle financeiro antes do Extrato Vivo e tem lá 
 | Educação | Educação | Exata |
 | Assinaturas | Assinaturas | Exata |
 | Outros | Outros | Exata |
-| Viagem | Viagens (categoria própria, criada em 03/set/2026 — a pessoa vai mandar as subcategorias dela depois) | Alta |
+| Viagem | Viagens (categoria própria, criada em 03/set/2026; subcategorias definidas na mesma data — ver seção 3.1) | Alta |
 | Pessoal | Cuidados pessoais | Confirmado pela pessoa |
 | Serviços | Cuidados pessoais > Loterias (era gasto com loteria) | Confirmado pela pessoa |
 | Vestuário | Compras | Confirmado pela pessoa |
