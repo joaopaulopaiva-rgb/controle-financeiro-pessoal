@@ -199,14 +199,16 @@ A pessoa usava outro app de controle financeiro antes do Extrato Vivo e tem lá 
 | Viagem | Viagens (categoria própria, criada em 03/set/2026 — a pessoa vai mandar as subcategorias dela depois) | Alta |
 | Pessoal | Cuidados pessoais | Confirmado pela pessoa |
 | Serviços | Cuidados pessoais > Loterias (era gasto com loteria) | Confirmado pela pessoa |
-| Vestuário | Compras | Inferido (roupa/calçado — não confirmado explicitamente) |
-| Lanche | Educação (mesmo raciocínio da subcategoria Lanches já existente — uso escolar) | Inferido (não confirmado explicitamente) |
+| Vestuário | Compras | Confirmado pela pessoa |
+| Lanche | Educação (mesmo raciocínio da subcategoria Lanches já existente — uso escolar) | Confirmado pela pessoa |
 
 O app antigo só mostra a aba "Gastos" nos prints recebidos até agora — **sem dado de receita** (`receitas_total` fica 0 nesses meses até a pessoa complementar, se quiser).
 
 **Meses processados assim:** 2026-01, 2026-02, 2026-03, 2026-04 (todos com `resumos/{mes}` gravado em 03/set/2026, valores batendo exatamente com o total do print). **2026-05 foi propositalmente pulado** — a pessoa avisou que maio já tinha bastante coisa levantada em detalhe (cartão já importado na primeira leva, seção acima) e vai complementar só com os valores de Pix de maio, sem precisar do resumo agregado.
 
-**Abril é caso especial:** já existiam 12 lançamentos reais de 29-30/abr (R$ 379,76) antes dessa importação — sobra da fatura de maio que cobre compras de abril. Isso NÃO foi removido nem duplicado: os 12 lançamentos continuam em `transacoes` normalmente (aparecem no Extrato/Top5/treemap se filtrar abril), mas os widgets de histórico (evolução, "meses com maiores despesas") usam o total do `resumos/2026-04` como fonte pra abril inteiro, não a soma dos dois — ver comentário no código (`renderMesesMaiores`/`renderEvolucoes` em `app/financas.html`). Regra geral daqui pra frente: **quando existir `resumos/{mes}`, ele é a fonte pros gráficos de histórico daquele mês**, mesmo que também existam alguns `transacoes` soltos no mesmo mês.
+**Abril teve um ajuste:** já existiam 12 lançamentos reais de 29-30/abr (R$ 379,76) antes dessa importação — sobra da fatura de maio que cobre compras de abril. A pessoa pediu pra remover esses 12 lançamentos (03/set/2026, mesmo dia) pra não ficar nada solto competindo com o resumo do mês inteiro — removidos de `transacoes`, e a nota no `resumos/2026-04.destaques` foi atualizada pra registrar isso. Abril agora é resumo puro, igual janeiro a março.
+
+**Regra geral daqui pra frente** (ainda vale mesmo com abril resolvido, caso apareça outro mês parecido): o código em `app/financas.html` (`renderMesesMaiores`/`renderEvolucoes`) já trata **`resumos/{mes}` como fonte pros gráficos de histórico daquele mês sempre que existir**, mesmo que também haja `transacoes` soltos no mesmo mês — não soma os dois. Os widgets de detalhe (Top 5, treemap, gauge, Extrato) continuam só em cima de `transacoes`.
 
 Os widgets que dependem de lançamento individual (Top 5, treemap categoria×subcategoria, medidor de poupança, Extrato) continuam vazios pra qualquer mês que só tenha resumo — isso é esperado, não é bug.
 
