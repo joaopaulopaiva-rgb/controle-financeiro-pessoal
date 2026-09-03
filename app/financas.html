@@ -143,6 +143,7 @@
   .toast{font-family:var(--font-mono);font-size:12px;color:var(--good);opacity:0;transition:opacity .2s;}
   .toast.show{opacity:1;}
   .btn-close{border:1px solid var(--line);background:var(--card-2);width:30px;height:30px;border-radius:6px;float:right;cursor:pointer;color:var(--ink-2);}
+  .btn-secondary{border:1px solid var(--line);background:var(--card-2);color:var(--ink-2);font-weight:600;font-size:13.5px;padding:9px 18px;border-radius:6px;cursor:pointer;}
 
   @media (max-width:980px){
     .grid{grid-template-columns:1fr;grid-template-areas:"filtro" "mesesMaiores" "evoDespesas" "top5" "meta" "evoSaldo" "evoReceita" "treemap" "analise" "extrato";}
@@ -213,6 +214,19 @@
     <div class="field"><span class="lbl">Data</span><input type="date" id="fData"></div>
     <div class="field"><span class="lbl">Descrição (opcional)</span><input type="text" id="fDescricao" placeholder="ex.: mercado, uber, aluguel"></div>
     <div class="modal-foot"><button class="btn-add" id="btnLancar">Salvar lançamento</button><span class="toast" id="toast">lançado ✓</span></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dialogOverlay" style="z-index:50;">
+  <div class="modal" style="max-width:340px;">
+    <p id="dialogMsg" style="margin:0 0 14px;font-size:14.5px;line-height:1.4;"></p>
+    <div class="field" id="dialogInputWrap" style="display:none;margin-bottom:16px;">
+      <input type="text" id="dialogInput">
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;margin-top:0;">
+      <button class="btn-secondary" id="dialogCancel">Cancelar</button>
+      <button class="btn-add" id="dialogOk">OK</button>
+    </div>
   </div>
 </div>
 
@@ -624,8 +638,10 @@
       var del = document.createElement('button'); del.className='del'; del.textContent='×'; del.title='Excluir';
       del.addEventListener('click', function(){
         if(!state.db) return;
-        if(!confirm('Excluir este lançamento?')) return;
-        state.db.collection('transacoes').doc(t.id).delete().then(carregarDados).catch(function(){});
+        abrirDialog('Excluir este lançamento?', false).then(function(ok){
+          if(!ok) return;
+          state.db.collection('transacoes').doc(t.id).delete().then(carregarDados).catch(function(){});
+        });
       });
       tr.lastChild.appendChild(del);
       body.appendChild(tr);
@@ -633,6 +649,42 @@
     if(!lista.length){ body.innerHTML = '<tr><td colspan="6"><div class="empty-msg">Nenhum lançamento com esses filtros.</div></td></tr>'; }
     $('#extratoTotal').textContent = fmtBRL(total);
     $('#extratoCount').textContent = lista.length + (lista.length===1 ? ' lançamento no filtro acima' : ' lançamentos no filtro acima');
+  }
+
+  // ---- diálogo próprio (confirmar/pedir texto) ----
+  // Não usa confirm()/prompt() do navegador: dentro do iframe sandboxed onde o Artifact
+  // roda no celular, esses diálogos nativos costumam ser bloqueados silenciosamente
+  // (o clique parece não fazer nada — é exatamente esse bug que isso evita).
+  var dialogResolve = null;
+  function abrirDialog(mensagem, comInput, valorPadrao){
+    return new Promise(function(resolve){
+      dialogResolve = resolve;
+      $('#dialogMsg').textContent = mensagem;
+      $('#dialogInputWrap').style.display = comInput ? 'block' : 'none';
+      $('#dialogInput').value = valorPadrao || '';
+      $('#dialogOverlay').classList.add('open');
+      if(comInput){ setTimeout(function(){ $('#dialogInput').focus(); }, 60); }
+    });
+  }
+  function fecharDialog(resultado){
+    $('#dialogOverlay').classList.remove('open');
+    var r = dialogResolve; dialogResolve = null;
+    if(r) r(resultado);
+  }
+  $('#dialogCancel').addEventListener('click', function(){ fecharDialog(null); });
+  $('#dialogOverlay').addEventListener('click', function(e){ if(e.target===this) fecharDialog(null); });
+  $('#dialogOk').addEventListener('click', function(){
+    var comInput = $('#dialogInputWrap').style.display !== 'none';
+    fecharDialog(comInput ? ($('#dialogInput').value || '').trim() : true);
+  });
+  $('#dialogInput').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); $('#dialogOk').click(); } });
+
+  function mostrarToast(msg, ehErro){
+    var t = $('#toast');
+    t.textContent = msg;
+    t.style.color = ehErro ? 'var(--critical)' : 'var(--good)';
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, ehErro ? 3200 : 1600);
   }
 
   // ---- modal: novo lançamento ----
@@ -662,13 +714,14 @@
     });
     var addChip = document.createElement('button'); addChip.type='button'; addChip.className='chip add'; addChip.textContent='+ nova';
     addChip.addEventListener('click', function(){
-      var nova = prompt('Nome da nova categoria de ' + (state.tipo==='despesa'?'despesa':'receita') + ':');
-      nova = (nova||'').trim(); if(!nova) return;
-      if(state.tipo==='despesa'){ if(!state.categorias.despesa[nova]) state.categorias.despesa[nova] = []; }
-      else if(lista.indexOf(nova)===-1){ lista.push(nova); }
-      salvarCategorias();
-      state.fCat = nova; state.fSub = null;
-      renderFCategorias(); renderFSubcategorias();
+      abrirDialog('Nome da nova categoria de ' + (state.tipo==='despesa'?'despesa':'receita') + ':', true).then(function(nova){
+        if(!nova) return;
+        if(state.tipo==='despesa'){ if(!state.categorias.despesa[nova]) state.categorias.despesa[nova] = []; }
+        else if(lista.indexOf(nova)===-1){ lista.push(nova); }
+        salvarCategorias();
+        state.fCat = nova; state.fSub = null;
+        renderFCategorias(); renderFSubcategorias();
+      });
     });
     wrap.appendChild(addChip);
   }
@@ -683,10 +736,11 @@
     });
     var addChip = document.createElement('button'); addChip.type='button'; addChip.className='chip add'; addChip.textContent='+ nova';
     addChip.addEventListener('click', function(){
-      var nova = prompt('Nome da nova subcategoria de ' + state.fCat + ':');
-      nova = (nova||'').trim(); if(!nova) return;
-      if(lista.indexOf(nova)===-1){ lista.push(nova); salvarCategorias(); }
-      state.fSub = nova; renderFSubcategorias();
+      abrirDialog('Nome da nova subcategoria de ' + state.fCat + ':', true).then(function(nova){
+        if(!nova) return;
+        if(lista.indexOf(nova)===-1){ lista.push(nova); salvarCategorias(); }
+        state.fSub = nova; renderFSubcategorias();
+      });
     });
     wrap.appendChild(addChip);
   }
@@ -714,15 +768,17 @@
       criado_em: new Date().toISOString()
     };
     var btn = $('#btnLancar'); btn.disabled = true; btn.textContent = 'Salvando…';
+    var deuErro = false;
     state.db.collection('transacoes').add(doc).then(function(){
       $('#fValor').value=''; $('#fDescricao').value='';
-      var toast=$('#toast'); toast.classList.add('show'); setTimeout(function(){toast.classList.remove('show');},1600);
+      mostrarToast('lançado ✓', false);
       return carregarDados();
     }).catch(function(err){
-      alert('Não consegui salvar: ' + (err && err.message ? err.message : 'erro desconhecido'));
+      deuErro = true;
+      mostrarToast('Não consegui salvar: ' + (err && err.message ? err.message : 'erro desconhecido'), true);
     }).then(function(){
       btn.disabled=false; btn.textContent='Salvar lançamento';
-      setTimeout(function(){ $('#modalOverlay').classList.remove('open'); }, 550);
+      if(!deuErro){ setTimeout(function(){ $('#modalOverlay').classList.remove('open'); }, 550); }
     });
   });
 
