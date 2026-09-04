@@ -146,6 +146,10 @@ Confirmado em conversa (02/set/2026), a partir da análise das faturas do cartã
 - **MP\*Produtoslucena** e **MP\*Seunaturalpra** (cartão da Melina) — produtos naturais (castanhas etc.) → Alimentação > **Mercadinho**.
 - **MP\*Angelafantasi** (cartão da Melina) — feira de frutas → Alimentação > **Feira** (nova subcategoria).
 - **Olho D'Água** — já vinha como "mercadinho" no nome → Alimentação > **Mercadinho**.
+- **Mercadinho Estrela do Mar** → Alimentação > Mercadinho (mesmo padrão do Olho D'Água — corrigido retroativamente em 04/set/2026, os 33 lançamentos que estavam em Alimentação > Supermercado).
+- **Gelo e Gela 24h** → Alimentação > **Bebidas** (corrigido retroativamente em 04/set/2026, 2 lançamentos que estavam em Supermercado).
+- **Iskisita (Atacado), Sacolão Ponta Negra, Casa Norte (Atacado)** → Compras > **Loja de departamento** (agrupados com Americanas/Lojas Americanas por decisão explícita da pessoa em 04/set/2026, mesmo sendo hortifruti/atacado de alimentos — corrigidos retroativamente 15 lançamentos que estavam em Alimentação > Supermercado, sendo 13 do Sacolão Ponta Negra).
+- **"Professora reforço Pedro - Katia"** → Educação > Reforço escolar (já estava correto, confirmado pela pessoa em 04/set/2026 — mesma pessoa da "Jim.com\*Katia Cristi" citada acima).
 - **Feira de Holambra** — não é feira de alimento, é jardinagem → Moradia > **Jardinagem** (nova subcategoria).
 
 **Excluídos do controle (confirmados "não são gastos seus/da família" ou "desconsiderar")**: Anabeatrizde, Francisco / 66.061.005 Francisco, N Deluxo II, Resilienza Negocios LT, DRF Comercio Ltda, Freeway, Alpinas Comercio, Comercial LNR Ltda, Mineiros4u, ZIG\*ECN Bett Educar, Virttus Consultoria (consultoria contratada e depois cancelada), Nayara Variedades (uso da escola, não é gasto do João Paulo).
