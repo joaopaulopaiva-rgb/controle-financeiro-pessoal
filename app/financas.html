@@ -28,6 +28,7 @@
     --good:#0ca30c; --critical:#e66767;
   }
   *{box-sizing:border-box;}
+  html,body{overflow-x:hidden;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-head);-webkit-font-smoothing:antialiased;}
   .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
   button,input,select{font-family:inherit;color:inherit;}
@@ -53,6 +54,7 @@
   .w-top5{grid-area:top5;} .w-meta{grid-area:meta;} .w-evoSaldo{grid-area:evoSaldo;}
   .w-evoReceita{grid-area:evoReceita;} .w-treemap{grid-area:treemap;} .w-analise{grid-area:analise;display:none;}
   .w-extrato{grid-area:extrato;}
+  .grid > *{min-width:0;}
 
   .widget{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;box-shadow:0 1px 2px var(--shadow);}
   .widget h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--navy);}
@@ -84,6 +86,7 @@
   .top5-row .track i{display:block;height:100%;background:var(--gold);border-radius:3px;}
   .top5-row .v{width:76px;text-align:right;font-size:12px;flex:none;}
 
+  #svgEvoDespesas,#svgEvoSaldo,#svgEvoReceita{width:100%;height:auto;display:block;}
   .gaugewrap{display:flex;flex-direction:column;align-items:center;}
   .gaugewrap svg{width:100%;max-width:220px;}
   .gaugewrap .pct{font-family:var(--font-mono);font-size:26px;font-weight:600;margin-top:-30px;}
