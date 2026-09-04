@@ -364,6 +364,10 @@
     mesesComResumo().forEach(function(m){ s[m] = true; });
     return Object.keys(s).sort();
   }
+  // Meses selecionáveis no filtro: real ou só-resumo — usada pra habilitar o botão no mesesGrid
+  // (senão um mês só-com-resumo, ex. jan-abr importados do app antigo, fica travado/inclicável e a pessoa
+  // nunca consegue abrir a "Análise do extrato" daquele mês, mesmo ela existindo em `resumos`).
+  function mesesDoAnoHistorico(ano){ return mesesHistorico().filter(function(m){ return m.slice(0,4) === ano; }); }
   function categoriasTodas(){
     var lista = Object.keys(state.categorias.despesa).slice();
     state.categorias.receita.forEach(function(c){ if(lista.indexOf(c) === -1) lista.push(c); });
@@ -387,13 +391,13 @@
     var wrap = $('#anos'); wrap.innerHTML = "";
     anosDisponiveis().forEach(function(a){
       var b = document.createElement('button'); b.className = (a === state.ano ? 'on' : ''); b.textContent = a;
-      b.addEventListener('click', function(){ state.ano = a; state.mesesSel = new Set(mesesDoAnoComDados(a)); renderIndicadores(); });
+      b.addEventListener('click', function(){ state.ano = a; state.mesesSel = new Set(mesesDoAnoHistorico(a)); renderIndicadores(); });
       wrap.appendChild(b);
     });
   }
   function renderMesesGrid(){
     var wrap = $('#mesesGrid'); wrap.innerHTML = "";
-    var comDados = mesesDoAnoComDados(state.ano);
+    var comDados = mesesDoAnoHistorico(state.ano);
     for(var m = 1; m <= 12; m++){
       var mm = state.ano + "-" + (m < 10 ? "0" + m : m);
       var has = comDados.indexOf(mm) > -1;

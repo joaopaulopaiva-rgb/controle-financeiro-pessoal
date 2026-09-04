@@ -218,6 +218,8 @@ O app antigo só mostra a aba "Gastos" nos prints recebidos até agora — **sem
 
 Os widgets que dependem de lançamento individual (Top 5, treemap categoria×subcategoria, medidor de poupança, Extrato) continuam vazios pra qualquer mês que só tenha resumo — isso é esperado, não é bug.
 
+**Bug real corrigido em 04/set/2026:** a pessoa reportou "os lançamentos de janeiro em diante não aparecem" ao testar no celular. Causa: o botão de cada mês no filtro (`renderMesesGrid`) só ficava clicável se o mês tivesse `transacoes` reais (`mesesDoAnoComDados`) — um mês só-com-resumo (jan-abr) aparecia **travado/inclicável**, então a pessoa nunca conseguia selecionar esses meses pra nada, nem pra abrir a "Análise do extrato" daquele mês (que já existia em `resumos` e mostraria o texto importado do app antigo). Corrigido com uma função nova (`mesesDoAnoHistorico`, real **ou** resumo) usada em `renderMesesGrid` e no clique do ano em `renderAnos` — agora jan-abr ficam selecionáveis; ao selecionar um deles sozinho, a Análise do extrato mostra a nota importada, e os widgets de detalhe mostram "sem dados no período" (esperado, não é bug — parágrafo acima). O padrão de seleção inicial ao abrir o app (`garantirPeriodo`) continua baseado só em `transacoes` reais, de propósito — a pessoa começa vendo o mês/ano com atividade detalhada de verdade, não um resumo agregado.
+
 ## 6. Decisões e convenções
 
 - Moeda: sempre BRL, formatado como `R$ 1.234,56`.
