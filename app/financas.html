@@ -351,7 +351,6 @@
     state.transacoes.forEach(function(t){ s[t.data.slice(0,7)] = true; });
     return Object.keys(s).sort();
   }
-  function mesesDoAnoComDados(ano){ return mesesComDados().filter(function(m){ return m.slice(0,4) === ano; }); }
   // Meses que só têm um resumo mensal (importado sem detalhe de lançamento) — ver seção 5.1 do CLAUDE.md.
   function mesesComResumo(){ return state.resumos.map(function(r){ return r.id; }).sort(); }
   // União de meses com lançamento real + meses só com resumo — usada nos gráficos de evolução e no ranking
@@ -377,13 +376,13 @@
     if(!state.mesesSel) return [];
     return state.transacoes.filter(function(t){ return state.mesesSel.has(t.data.slice(0,7)); });
   }
+  // Filtro sempre abre só no mês atual (decisão de 04/set/2026) — a pessoa quer ver "como estou esse mês"
+  // de cara, e escolhe outros meses/anos manualmente no filtro quando quiser.
   function garantirPeriodo(){
     if(state.ano && state.mesesSel) return;
-    var md = mesesComDados();
-    state.ano = md.length ? md[md.length-1].slice(0,4) : isoMonth(new Date()).slice(0,4);
-    var comDados = mesesDoAnoComDados(state.ano);
-    var fallback = state.ano === isoMonth(new Date()).slice(0,4) ? isoMonth(new Date()) : (state.ano + '-01');
-    state.mesesSel = new Set(comDados.length ? comDados : [fallback]);
+    var atual = isoMonth(new Date());
+    state.ano = atual.slice(0,4);
+    state.mesesSel = new Set([atual]);
   }
 
   // ---- filtro card (ano + grade de meses) ----
@@ -534,6 +533,41 @@
     svgAxisChart($('#svgEvoReceita'), meses.map(function(m){return {m:m,v:porMesReceitaSal[m]+porMesReceitaExtra[m], parts:[{v:porMesReceitaSal[m],color:'var(--navy)'},{v:porMesReceitaExtra[m],color:'var(--navy-2)'}]};}), {type:'stackedbar'});
   }
 
+  // Agrega o período selecionado pra widgets que só precisam de total por categoria (gauge, treemap) — não
+  // Top 5, que é por subcategoria e não tem como vir de resumo. Pra cada mês selecionado: usa o resumo (se
+  // existir) sem detalhe de subcategoria, senão soma as transacoes reais daquele mês — mesma regra de
+  // "resumo sempre vence quando existe" já usada em renderMesesMaiores/renderEvolucoes, pra não somar os dois.
+  function agregarPeriodo(){
+    var resumoPorId = {}; state.resumos.forEach(function(r){ resumoPorId[r.id] = r.data || {}; });
+    var txPorMes = {};
+    state.transacoes.forEach(function(t){ var m = t.data.slice(0,7); txPorMes[m] = txPorMes[m] || []; txPorMes[m].push(t); });
+    var porCatSub = {}, despesas = 0, receitas = 0;
+    (state.mesesSel || new Set()).forEach(function(m){
+      var r = resumoPorId[m];
+      if(r && Object.keys(r.por_categoria || {}).length){
+        Object.keys(r.por_categoria).forEach(function(cat){
+          var v = r.por_categoria[cat];
+          porCatSub[cat] = porCatSub[cat] || {};
+          porCatSub[cat]['Sem detalhe (resumo importado)'] = (porCatSub[cat]['Sem detalhe (resumo importado)'] || 0) + v;
+          despesas += v;
+        });
+        receitas += r.receitas_total || 0;
+      } else {
+        (txPorMes[m] || []).forEach(function(t){
+          if(t.tipo === 'despesa'){
+            var s = t.subcategoria || 'Sem subcategoria';
+            porCatSub[t.categoria] = porCatSub[t.categoria] || {};
+            porCatSub[t.categoria][s] = (porCatSub[t.categoria][s] || 0) + t.valor;
+            despesas += t.valor;
+          } else {
+            receitas += t.valor;
+          }
+        });
+      }
+    });
+    return {porCatSub: porCatSub, despesas: despesas, receitas: receitas};
+  }
+
   // ---- top 5 despesas do período ----
   function renderTop5(){
     var por = {};
@@ -543,7 +577,11 @@
     var arr = Object.keys(por).map(function(k){ return {sub:k, v:por[k].v, cat:por[k].cat}; }).sort(function(a,b){return b.v-a.v;}).slice(0,5);
     var max = Math.max.apply(null, arr.map(function(x){return x.v;}).concat([1]));
     var wrap = $('#top5'); wrap.innerHTML = "";
-    if(!arr.length){ wrap.innerHTML = '<div class="empty-msg">Sem despesas no período.</div>'; return; }
+    if(!arr.length){
+      var semDetalhe = agregarPeriodo().despesas > 0;
+      wrap.innerHTML = '<div class="empty-msg">' + (semDetalhe ? 'Sem detalhe por subcategoria nesse período (só total por categoria — ver "Categoria × subcategoria" abaixo).' : 'Sem despesas no período.') + '</div>';
+      return;
+    }
     arr.forEach(function(item){
       var row = document.createElement('div'); row.className = 'top5-row';
       row.innerHTML = '<span class="lbl">'+escapeHtml(item.sub)+'</span><span class="track"><i style="width:'+(item.v/max*100)+'%"></i></span><span class="v num">'+fmtBRL(item.v)+'</span>';
@@ -558,9 +596,8 @@
 
   // ---- gauge: taxa de poupança do período ----
   function renderGauge(){
-    var lista = periodoTX();
-    var receitas = lista.filter(function(t){return t.tipo==='receita';}).reduce(function(a,t){return a+t.valor;},0);
-    var despesas = lista.filter(function(t){return t.tipo==='despesa';}).reduce(function(a,t){return a+t.valor;},0);
+    var agr = agregarPeriodo();
+    var receitas = agr.receitas, despesas = agr.despesas;
     var taxa = receitas>0 ? Math.max(0, Math.min(1, (receitas-despesas)/receitas)) : 0;
     var svg = $('#svgGauge');
     var cx=110,cy=112,r=90;
@@ -580,11 +617,7 @@
 
   // ---- treemap categoria x subcategoria do período ----
   function renderTreemap(){
-    var por = {};
-    periodoTX().filter(function(t){return t.tipo==='despesa';}).forEach(function(t){
-      por[t.categoria] = por[t.categoria] || {}; var s = t.subcategoria || "Sem subcategoria";
-      por[t.categoria][s] = (por[t.categoria][s]||0) + t.valor;
-    });
+    var por = agregarPeriodo().porCatSub;
     var cats = Object.keys(por).map(function(c){ var tot = Object.values(por[c]).reduce(function(a,b){return a+b;},0); return {c:c, tot:tot}; }).sort(function(a,b){return b.tot-a.tot;});
     var wrap = $('#treemap'); wrap.innerHTML = "";
     if(!cats.length){ wrap.innerHTML = '<div class="empty-msg">Sem despesas no período.</div>'; return; }
